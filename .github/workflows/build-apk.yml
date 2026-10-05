@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -47,7 +47,8 @@ jobs:
           mkdir -p assets
           cp public/icon-512.png assets/icon-only.png
           cp public/icon-maskable-512.png assets/icon-foreground.png
-          npx capacitor-assets generate --android --iconBackgroundColor '#FFFFFF' --splashBackgroundColor '#FFFFFF' || echo "icon generation skipped"
+          node -e "require('sharp')({create:{width:1024,height:1024,channels:3,background:'#FFFFFF'}}).png().toFile('assets/icon-background.png')"
+          npx capacitor-assets generate --android --iconBackgroundColor '#FFFFFF' --splashBackgroundColor '#FFFFFF'
           npx cap sync android
 
       - name: Set version

@@ -35,6 +35,7 @@ screens.jsx  all screens (Home, Services, Providers, Schedule, Tracking, Invoice
 data.js      sample categories, services, providers, pricing and bill calculation
 icons.jsx    inline SVG icons
 styles.css   design tokens and styles
+public/      app icons, manifest.webmanifest, sw.js (offline)
 ```
 
 ## Live demo
@@ -43,6 +44,15 @@ Every push to `main` builds the app and publishes it to GitHub Pages (see `.gith
 https://utku54321.github.io/servizato-customer/
 
 One-time setup: **Settings → Pages → Source → GitHub Actions**.
+
+## Install on a phone
+
+The app is installable (web app manifest + offline service worker, files in `public/`).
+
+- **Android (Chrome):** open the link → tap **Install** in the prompt, or **⋮ → Install app**. Also available under **Account → Install app**.
+- **iPhone (Safari):** open the link → **Share → Add to Home Screen**.
+
+It then opens full screen from its own icon and keeps working offline.
 
 ## Connecting a real backend later
 

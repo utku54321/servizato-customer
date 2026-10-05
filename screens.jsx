@@ -674,7 +674,7 @@ export function BookingsScreen({ store, nav, actions, route }) {
 
 /* ---------- Account ---------- */
 
-export function AccountScreen({ store, actions }) {
+export function AccountScreen({ store, actions, install }) {
   const total = store.bookings.length;
   return (
     <div className="screen">
@@ -688,6 +688,21 @@ export function AccountScreen({ store, actions }) {
           <h2 className="section-title sm">Saved address</h2>
           <div className="row"><Icon name="pin" className="accent" /><div className="stack-xs"><strong>{store.address.label}</strong><span className="muted">{store.address.line}</span></div></div>
         </section>
+        {!install.installed && (
+          <section className="card stack-sm">
+            <h2 className="section-title sm">Install the app</h2>
+            {install.canPrompt ? (
+              <>
+                <p className="muted">Add Servizato to your home screen. It opens full screen and works offline.</p>
+                <button type="button" className="btn btn-primary" onClick={install.prompt}><Icon name="download" size={18} />Install app</button>
+              </>
+            ) : install.isIos ? (
+              <p className="muted">In Safari, tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p>
+            ) : (
+              <p className="muted">Open your browser menu (⋮) and tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
+            )}
+          </section>
+        )}
         <section className="demo-box">
           <p><strong>Prototype.</strong> Providers, prices and technicians are sample data. Bookings are saved only on this device.</p>
           <button type="button" className="btn btn-outline" onClick={actions.reset}>Clear demo data</button>

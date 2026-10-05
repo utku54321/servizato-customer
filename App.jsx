@@ -46,6 +46,33 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // "Install app": Android/desktop Chrome hands us a prompt we can show from a button.
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installed, setInstalled] = useState(
+    () => window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
+  );
+  useEffect(() => {
+    const onPrompt = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    const onInstalled = () => { setInstalled(true); setInstallPrompt(null); setToast('Servizato installed'); };
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+  const install = {
+    installed,
+    canPrompt: !!installPrompt,
+    isIos: /iphone|ipad|ipod/i.test(window.navigator.userAgent),
+    prompt: async () => {
+      if (!installPrompt) return;
+      installPrompt.prompt();
+      await installPrompt.userChoice.catch(() => null);
+      setInstallPrompt(null);
+    },
+  };
+
   const current = stack[stack.length - 1];
 
   // Keep the browser/phone back button in sync with in-app navigation.
@@ -137,7 +164,7 @@ export default function App() {
   };
 
   const booking = current.id ? store.bookings.find((b) => b.id === current.id) : null;
-  const props = { store, nav, draft, setDraft, actions, booking, route: current };
+  const props = { store, nav, draft, setDraft, actions, booking, route: current, install };
 
   let screen;
   switch (current.name) {

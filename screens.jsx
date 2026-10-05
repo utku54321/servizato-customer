@@ -64,7 +64,7 @@ export function HomeScreen({ store, nav, actions }) {
       <header className="home-head">
         <div>
           <p className="muted-label">Service address</p>
-          <p className="address-line"><Icon name="pin" size={18} className="accent" />{store.address.label} · Sector 62, Noida</p>
+          <p className="address-line"><Icon name="pin" size={18} className="accent" />{store.address.label} · {store.address.area || store.address.line}</p>
         </div>
       </header>
 
@@ -86,7 +86,7 @@ export function HomeScreen({ store, nav, actions }) {
           <section className="stack-sm" aria-label="Search results">
             {results.length === 0 && <p className="empty-note">No services match “{query}”. Try “AC”, “leak” or “cleaning”.</p>}
             {results.map(({ c, s }) => (
-              <button key={s.id} type="button" className="result-row" onClick={() => actions.startBooking(c.id)}>
+              <button key={s.id} type="button" className="result-row" onClick={() => actions.startBooking(c.id, s.id)}>
                 <span className="cat-icon sm"><Icon name={c.icon} size={18} /></span>
                 <span className="grow"><strong>{s.name}</strong><small>{c.name} · from {money(priceFor(s, null))}</small></span>
                 <Icon name="arrowRight" size={18} />
@@ -215,12 +215,13 @@ const SORTS = [
   { id: 'near', label: 'Nearest' },
 ];
 
-export function ProvidersScreen({ nav, draft, setDraft }) {
+export function ProvidersScreen({ store, nav, draft, setDraft }) {
   const [sort, setSort] = useState('rec');
   if (!draft) return null;
   const cat = getCategory(draft.categoryId);
   const chosen = draft.serviceIds.map((id) => getService(cat.id, id));
   const totalFor = (p) => chosen.reduce((a, s) => a + priceFor(s, p), 0);
+  const firstBooking = store.bookings.filter((b) => b.status !== 'cancelled').length === 0;
 
   const list = providers
     .filter((p) => p.categories.includes(cat.id))
@@ -255,11 +256,12 @@ export function ProvidersScreen({ nav, draft, setDraft }) {
                 <strong className="card-title with-icon">{p.name}<Icon name="shield" size={16} className="ok" /></strong>
                 <span className="meta-row"><Stars value={p.rating} /><span>{p.reviews.toLocaleString('en-IN')} reviews</span><span>{p.km} km away</span></span>
               </div>
-              <div className="provider-price"><small>Total</small><strong>{money(p.total)}</strong></div>
+              <div className="provider-price"><small>From</small><strong>{money(p.total)}</strong></div>
             </div>
             <div className="badges">
-              <span className="badge"><Icon name="clock" size={13} />Earliest {p.earliest > 12 ? p.earliest - 12 + ' PM' : p.earliest + ' AM'}</span>
+              <span className="badge"><Icon name="clock" size={13} />Earliest {p.earliest > 12 ? p.earliest - 12 + ' PM' : p.earliest === 12 ? '12 PM' : p.earliest + ' AM'}</span>
               <span className="badge">{p.jobs} jobs done</span>
+              {firstBooking && <span className="badge warm"><Icon name="tag" size={13} />10% off first booking</span>}
               {p.offer && <span className="badge warm"><Icon name="tag" size={13} />{p.offer}</span>}
             </div>
             <button type="button" className={'btn ' + (i === 0 ? 'btn-primary' : 'btn-outline')} onClick={() => pick(p)}>
@@ -279,10 +281,14 @@ export function ScheduleScreen({ store, nav, draft, setDraft, actions }) {
   if (!draft) return null;
   const provider = getProvider(draft.providerId);
   const cat = getCategory(draft.categoryId);
-  const dateIso = draft.dateIso || dates[0].iso;
-  const dateObj = dates.find((d) => d.iso === dateIso) || dates[0];
   const nowHour = new Date().getHours();
-  const unavailable = (s) => dateObj.isToday && (s.start <= nowHour + 1 || s.start < provider.earliest);
+  const isOff = (d, s) => d.isToday && (s.start <= nowHour + 1 || s.start < provider.earliest);
+  // Default to the first day that still has a free slot (late evening → tomorrow).
+  const firstOpen = dates.find((d) => slots.some((s) => !isOff(d, s))) || dates[0];
+  const dateIso = draft.dateIso || firstOpen.iso;
+  const dateObj = dates.find((d) => d.iso === dateIso) || firstOpen;
+  const unavailable = (s) => isOff(dateObj, s);
+  const noneToday = dateObj.isToday && slots.every(unavailable);
 
   const lines = draft.serviceIds.map((id) => {
     const s = getService(cat.id, id);
@@ -314,6 +320,7 @@ export function ScheduleScreen({ store, nav, draft, setDraft, actions }) {
 
         <section className="stack-sm">
           <h2 className="section-title sm">Pick a time</h2>
+          {noneToday && <p className="empty-note">No slots left today. Pick another date.</p>}
           <div className="slot-grid">
             {slots.map((s) => {
               const off = unavailable(s);
@@ -366,6 +373,7 @@ export function ScheduleScreen({ store, nav, draft, setDraft, actions }) {
 /* ---------- Tracking ---------- */
 
 export function TrackingScreen({ nav, booking, actions }) {
+  const demoContact = () => actions.notify('Calls and chat open in the live app');
   const provider = getProvider(booking.providerId);
   const tech = provider.technician;
   const cat = getCategory(booking.categoryId);
@@ -402,8 +410,8 @@ export function TrackingScreen({ nav, booking, actions }) {
           <div className="card row">
             <span className="avatar round">{tech.initials}</span>
             <div className="grow stack-xs"><strong>{tech.name}</strong><span className="meta"><Stars value={tech.rating} size={13} />{provider.name}</span></div>
-            <a className="icon-btn outline" href="sms:" aria-label={'Message ' + tech.name}><Icon name="chat" size={20} /></a>
-            <a className="icon-btn solid" href="tel:" aria-label={'Call ' + tech.name}><Icon name="phone" size={20} /></a>
+            <button type="button" className="icon-btn outline" aria-label={'Message ' + tech.name} onClick={demoContact}><Icon name="chat" size={20} /></button>
+            <button type="button" className="icon-btn solid" aria-label={'Call ' + tech.name} onClick={demoContact}><Icon name="phone" size={20} /></button>
           </div>
         )}
 
@@ -542,7 +550,7 @@ export function InvoiceScreen({ nav, booking, actions }) {
 const WORDS = ['Tap a star to rate', 'Poor', 'Below average', 'Okay', 'Good', 'Excellent'];
 const TAGS = ['On time', 'Polite', 'Clean work', 'Fair price', 'Expert', 'Explained the problem'];
 
-export function ReviewScreen({ nav, booking, actions }) {
+export function ReviewScreen({ nav, booking, actions, route }) {
   const [rating, setRating] = useState(0);
   const [tags, setTags] = useState([]);
   const [comment, setComment] = useState('');
@@ -554,14 +562,18 @@ export function ReviewScreen({ nav, booking, actions }) {
   return (
     <div className="screen">
       <div className="close-row">
-        <button type="button" className="icon-btn outline" aria-label="Close" onClick={() => nav.tab('home')}><Icon name="close" size={20} /></button>
+        <button type="button" className="icon-btn outline" aria-label="Close" onClick={() => (route.justPaid ? nav.tab('home') : nav.back())}><Icon name="close" size={20} /></button>
       </div>
       <div className="content">
-        <div className="success">
-          <span className="success-icon"><Icon name="check" size={34} /></span>
-          <h1>Payment successful</h1>
-          <p className="muted">{money(bill.total)} paid to {provider.name}{methodLabel && ' via ' + methodLabel}</p>
-        </div>
+        {route.justPaid ? (
+          <div className="success">
+            <span className="success-icon"><Icon name="check" size={34} /></span>
+            <h1>Payment successful</h1>
+            <p className="muted">{money(bill.total)} paid to {provider.name}{methodLabel && ' via ' + methodLabel}</p>
+          </div>
+        ) : (
+          <h1 className="page-title">Rate your service</h1>
+        )}
 
         <section className="card stack-md">
           <div className="row">
@@ -595,7 +607,7 @@ export function ReviewScreen({ nav, booking, actions }) {
       </div>
       <footer className="bottombar stack-xs">
         <button type="button" className="btn btn-primary btn-lg" disabled={!rating} onClick={() => actions.review(booking, { rating, tags, comment })}>Submit review</button>
-        <button type="button" className="btn btn-ghost" onClick={() => nav.tab('bookings')}>Skip for now</button>
+        <button type="button" className="btn btn-ghost" onClick={() => nav.tab('bookings', { view: 'past' })}>Skip for now</button>
       </footer>
     </div>
   );
@@ -603,8 +615,8 @@ export function ReviewScreen({ nav, booking, actions }) {
 
 /* ---------- Bookings ---------- */
 
-export function BookingsScreen({ store, nav, actions }) {
-  const [tab, setTab] = useState('up');
+export function BookingsScreen({ store, nav, actions, route }) {
+  const [tab, setTab] = useState(route.view === 'past' ? 'past' : 'up');
   const upcoming = store.bookings.filter(isActive);
   const past = store.bookings.filter((b) => !isActive(b));
   const list = tab === 'up' ? upcoming : past;

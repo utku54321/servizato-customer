@@ -2,7 +2,7 @@
 
 Mobile-first web app for customers of the Servizato service marketplace: find a service, compare providers, book a slot, track the technician with OTP, pay the invoice and leave a review.
 
-> **Prototype:** providers, prices and technicians are sample data in `src/data.js`. Bookings are saved in the browser (localStorage). There is no backend yet.
+> **Prototype:** providers, prices and technicians are sample data in `data.js`. Bookings are saved in the browser (localStorage). There is no backend yet.
 
 ## Run it locally
 
@@ -28,14 +28,22 @@ Open the link it prints (usually http://localhost:5173). For the phone view in a
 ## Project structure
 
 ```
-src/
-  App.jsx      navigation, app state, booking actions
-  screens.jsx  all screens (Home, Services, Providers, Schedule, Tracking, Invoice, Review, Bookings, Account)
-  data.js      sample categories, services, providers, pricing and bill calculation
-  icons.jsx    inline SVG icons
-  styles.css   design tokens and styles
+index.html   page shell (Vite entry)
+main.jsx     mounts the React app
+App.jsx      navigation, app state, booking actions
+screens.jsx  all screens (Home, Services, Providers, Schedule, Tracking, Invoice, Review, Bookings, Account)
+data.js      sample categories, services, providers, pricing and bill calculation
+icons.jsx    inline SVG icons
+styles.css   design tokens and styles
 ```
+
+## Live demo
+
+Every push to `main` builds the app and publishes it to GitHub Pages (see `.github/workflows/deploy.yml`):
+https://utku54321.github.io/servizato-customer/
+
+One-time setup: **Settings → Pages → Source → GitHub Actions**.
 
 ## Connecting a real backend later
 
-Replace the sample data in `src/data.js` and the actions in `src/App.jsx` (`createBooking`, `advance`, `pay`, `review`) with API calls to the Servizato backend.
+Replace the sample data in `data.js` and the actions in `App.jsx` (`createBooking`, `advance`, `pay`, `review`) with API calls to the Servizato backend.

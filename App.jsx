@@ -1,23 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './icons.jsx';
-import { STATUS_FLOW, demoParts, getProvider } from './data.js';
+import { STATUS_FLOW, demoParts, getCategory, getProvider } from './data.js';
 import {
   HomeScreen, ServicesScreen, ProvidersScreen, ScheduleScreen,
   TrackingScreen, InvoiceScreen, ReviewScreen, BookingsScreen, AccountScreen,
 } from './screens.jsx';
 
-const STORAGE_KEY = 'servizato-customer-v1';
+// Bump the version whenever sample data IDs change, so old saved bookings are dropped.
+const STORAGE_KEY = 'servizato-customer-v2';
 
 const initialStore = {
   name: 'Priya',
-  address: { label: 'Home', line: 'Flat 402, Tower B, Sector 62, Noida' },
+  address: { label: 'Home', area: 'Sector 62, Noida', line: 'Flat 402, Tower B, Sector 62, Noida' },
   bookings: [],
 };
 
 function loadStore() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...initialStore, ...JSON.parse(raw) } : initialStore;
+    if (!raw) return initialStore;
+    const saved = JSON.parse(raw);
+    // Skip any saved booking that points at a provider or category that no longer exists.
+    const bookings = (saved.bookings || []).filter((b) => getProvider(b.providerId) && getCategory(b.categoryId));
+    return { ...initialStore, ...saved, bookings };
   } catch {
     return initialStore;
   }
@@ -43,10 +48,25 @@ export default function App() {
 
   const current = stack[stack.length - 1];
 
+  // Keep the browser/phone back button in sync with in-app navigation.
+  const depth = useRef(1);
+  useEffect(() => { depth.current = stack.length; }, [stack]);
+  useEffect(() => {
+    const onPop = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const nav = useMemo(() => ({
-    go: (name, params = {}) => { setStack((s) => [...s, { name, ...params }]); window.scrollTo(0, 0); },
-    back: () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)),
-    tab: (name) => setStack([{ name }]),
+    go: (name, params = {}) => {
+      setStack((s) => [...s, { name, ...params }]);
+      window.history.pushState({ servizato: true }, '');
+      window.scrollTo(0, 0);
+    },
+    back: () => {
+      if (depth.current > 1) window.history.back();
+    },
+    tab: (name, params = {}) => setStack([{ name, ...params }]),
     replace: (entries) => setStack(entries),
   }), []);
 
@@ -54,8 +74,8 @@ export default function App() {
     setStore((s) => ({ ...s, bookings: s.bookings.map((b) => (b.id === id ? { ...b, ...patch } : b)) }));
 
   const actions = {
-    startBooking: (categoryId) => {
-      setDraft({ categoryId, serviceIds: [], providerId: null, dateIso: null, slotStart: null, note: '' });
+    startBooking: (categoryId, serviceId) => {
+      setDraft({ categoryId, serviceIds: serviceId ? [serviceId] : [], providerId: null, dateIso: null, slotStart: null, note: '' });
       nav.go('services');
     },
     createBooking: (extra = {}) => {
@@ -100,13 +120,14 @@ export default function App() {
     },
     pay: (booking, method) => {
       updateBooking(booking.id, { status: 'paid', payMethod: method, paidAt: new Date().toISOString() });
-      nav.replace([{ name: 'home' }, { name: 'review', id: booking.id }]);
+      nav.replace([{ name: 'home' }, { name: 'review', id: booking.id, justPaid: true }]);
     },
     review: (booking, review) => {
       updateBooking(booking.id, { review });
       setToast('Thanks for your review');
-      nav.tab('bookings');
+      nav.tab('bookings', { view: 'past' });
     },
+    notify: (msg) => setToast(msg),
     reset: () => {
       setStore(initialStore);
       setDraft(null);
@@ -116,7 +137,7 @@ export default function App() {
   };
 
   const booking = current.id ? store.bookings.find((b) => b.id === current.id) : null;
-  const props = { store, nav, draft, setDraft, actions, booking };
+  const props = { store, nav, draft, setDraft, actions, booking, route: current };
 
   let screen;
   switch (current.name) {
@@ -135,7 +156,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <main className="app-main" key={stack.length + current.name}>{screen}</main>
+      <main className="app-main" key={stack.length + current.name + (current.view || '')}>{screen}</main>
       {showTabs && (
         <nav className="tabbar" aria-label="Main">
           {[

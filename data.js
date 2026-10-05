@@ -55,9 +55,9 @@ export const services = {
 const allCats = categories.map((c) => c.id);
 
 export const providers = [
-  { id: 'coolcare', name: 'CoolCare Services', initials: 'CC', rating: 4.8, reviews: 2140, km: 1.2, jobs: '3,200+', factor: 1.0, offer: '10% off first booking', categories: ['ac', 'appliances', 'electrical'], technician: { name: 'Aman Kumar', initials: 'AK', rating: 4.9 }, earliest: 13 },
+  { id: 'coolcare', name: 'CoolCare Services', initials: 'CC', rating: 4.8, reviews: 2140, km: 1.2, jobs: '3,200+', factor: 1.0, offer: '', categories: ['ac', 'appliances', 'electrical'], technician: { name: 'Aman Kumar', initials: 'AK', rating: 4.9 }, earliest: 13 },
   { id: 'airpro', name: 'AirPro Technicians', initials: 'AP', rating: 4.9, reviews: 980, km: 3.1, jobs: '1,100+', factor: 1.1, offer: '', categories: ['ac', 'appliances'], technician: { name: 'Rohit Singh', initials: 'RS', rating: 4.8 }, earliest: 15 },
-  { id: 'quickfix', name: 'QuickFix Home', initials: 'QF', rating: 4.4, reviews: 610, km: 0.8, jobs: '700+', factor: 0.8, offer: '₹50 off today', categories: allCats, technician: { name: 'Vikas Yadav', initials: 'VY', rating: 4.5 }, earliest: 11 },
+  { id: 'quickfix', name: 'QuickFix Home', initials: 'QF', rating: 4.4, reviews: 610, km: 0.8, jobs: '700+', factor: 0.8, offer: '', categories: allCats, technician: { name: 'Vikas Yadav', initials: 'VY', rating: 4.5 }, earliest: 11 },
   { id: 'frostline', name: 'FrostLine Appliances', initials: 'FL', rating: 4.6, reviews: 1320, km: 2.5, jobs: '1,800+', factor: 0.9, offer: '', categories: ['ac', 'appliances'], technician: { name: 'Sandeep Rawat', initials: 'SR', rating: 4.7 }, earliest: 9 },
   { id: 'sparkle', name: 'SparkleCare', initials: 'SC', rating: 4.7, reviews: 1560, km: 1.9, jobs: '2,400+', factor: 1.0, offer: '', categories: ['cleaning', 'pest', 'painting'], technician: { name: 'Neha Sharma', initials: 'NS', rating: 4.9 }, earliest: 11 },
   { id: 'brightwire', name: 'BrightWire Electricals', initials: 'BW', rating: 4.6, reviews: 870, km: 2.2, jobs: '1,300+', factor: 0.95, offer: '', categories: ['electrical', 'plumbing', 'carpentry'], technician: { name: 'Imran Khan', initials: 'IK', rating: 4.8 }, earliest: 13 },

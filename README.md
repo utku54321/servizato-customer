@@ -1,0 +1,41 @@
+# Servizato Customer App
+
+Mobile-first web app for customers of the Servizato service marketplace: find a service, compare providers, book a slot, track the technician with OTP, pay the invoice and leave a review.
+
+> **Prototype:** providers, prices and technicians are sample data in `src/data.js`. Bookings are saved in the browser (localStorage). There is no backend yet.
+
+## Run it locally
+
+You need [Node.js](https://nodejs.org) 18 or newer.
+
+```bash
+npm install
+npm run dev
+```
+
+Open the link it prints (usually http://localhost:5173). For the phone view in a desktop browser, press F12 and turn on the device toolbar.
+
+## Try the full flow
+
+1. Home → tap **AC Repair** → add one or more services → **Choose provider**
+2. Sort providers, then select one → pick a date and time → **Confirm booking**
+3. On the tracking screen, tap **Simulate next update** to move the job forward (assigned → on the way → started → completed)
+4. **View invoice and pay** → choose a payment method → pay
+5. Rate the service → see it under **Bookings → Past**
+
+**Account → Clear demo data** resets everything.
+
+## Project structure
+
+```
+src/
+  App.jsx      navigation, app state, booking actions
+  screens.jsx  all screens (Home, Services, Providers, Schedule, Tracking, Invoice, Review, Bookings, Account)
+  data.js      sample categories, services, providers, pricing and bill calculation
+  icons.jsx    inline SVG icons
+  styles.css   design tokens and styles
+```
+
+## Connecting a real backend later
+
+Replace the sample data in `src/data.js` and the actions in `src/App.jsx` (`createBooking`, `advance`, `pay`, `review`) with API calls to the Servizato backend.

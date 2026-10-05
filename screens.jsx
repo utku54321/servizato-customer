@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icon } from './icons.jsx';
+import { syncLabel } from './shared.js';
 import {
   categories, services, providers, slots, STATUS_FLOW, statusText,
   getCategory, getProvider, getService, priceFor, money, upcomingDates, formatDate, billFor,
@@ -709,11 +710,18 @@ export function AccountScreen({ store, actions, install }) {
             )}
           </section>
         )}
+        <SyncStatus />
         <section className="demo-box">
-          <p><strong>Prototype.</strong> Providers, prices and technicians are sample data. Bookings are saved only on this device, and the Servizato Partner and Technician apps on this device can pick them up.</p>
+          <p><strong>Prototype.</strong> Providers, prices and technicians are sample data. With cloud sync on, your bookings reach the provider and technician on their own phones; otherwise they stay on this device.</p>
           <button type="button" className="btn btn-outline" onClick={actions.reset}>Clear demo data</button>
         </section>
       </div>
     </div>
   );
+}
+
+/* ---------- Cloud sync status ---------- */
+function SyncStatus() {
+  const s = syncLabel();
+  return <p className={'sync-status ' + s.tone} role="status"><span className="sync-dot" aria-hidden="true" />{s.text}</p>;
 }

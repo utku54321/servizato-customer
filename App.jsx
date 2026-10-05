@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './icons.jsx';
 import { STATUS_FLOW, demoParts, getCategory, getProvider, statusText } from './data.js';
-import { readJobs, removeJobs, subscribe, mergeJob } from './shared.js';
+import { readJobs, removeJobs, subscribe, mergeJob, syncBookings } from './shared.js';
 import {
   HomeScreen, ServicesScreen, ProvidersScreen, ScheduleScreen,
   TrackingScreen, InvoiceScreen, ReviewScreen, BookingsScreen, AccountScreen,
@@ -39,6 +39,7 @@ export default function App() {
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); } catch { /* storage unavailable */ }
+    syncBookings(store); // publish bookings to the cloud so providers and technicians see them
   }, [store]);
 
   useEffect(() => {

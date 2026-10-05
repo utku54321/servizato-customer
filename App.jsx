@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './icons.jsx';
-import { STATUS_FLOW, demoParts, getCategory, getProvider } from './data.js';
+import { STATUS_FLOW, demoParts, getCategory, getProvider, statusText } from './data.js';
+import { readJobs, removeJobs, subscribe, mergeJob } from './shared.js';
 import {
   HomeScreen, ServicesScreen, ProvidersScreen, ScheduleScreen,
   TrackingScreen, InvoiceScreen, ReviewScreen, BookingsScreen, AccountScreen,
@@ -73,6 +74,35 @@ export default function App() {
     },
   };
 
+  // Live updates from the provider + technician apps (same site, shared browser storage).
+  const [sharedJobs, setSharedJobs] = useState(readJobs);
+  useEffect(() => subscribe(() => setSharedJobs(readJobs())), []);
+  const bookings = useMemo(
+    () => store.bookings.map((b) => ({ ...mergeJob(b, sharedJobs[b.id]), live: !!sharedJobs[b.id] })),
+    [store.bookings, sharedJobs]
+  );
+  const view = useMemo(() => ({ ...store, bookings }), [store, bookings]);
+
+  // Toast when the provider or technician moves a booking forward.
+  const lastStatus = useRef(null);
+  useEffect(() => {
+    const prev = lastStatus.current;
+    lastStatus.current = Object.fromEntries(bookings.map((b) => [b.id, b.status]));
+    if (!prev) return;
+    const changed = bookings.find((b) => b.live && prev[b.id] && prev[b.id] !== b.status);
+    if (!changed) return;
+    const tech = changed.tech?.name || 'Your technician';
+    const msgs = {
+      confirmed: 'The technician could not make it. Finding another one',
+      assigned: tech + ' is assigned to your job',
+      onway: tech + ' is on the way',
+      started: 'Job started with your OTP',
+      completed: 'Job completed. Your invoice is ready',
+      cancelled: changed.declined ? 'The provider could not take this booking' : statusText.cancelled,
+    };
+    if (msgs[changed.status]) setToast(msgs[changed.status]);
+  }, [bookings]);
+
   const current = stack[stack.length - 1];
 
   // Keep the browser/phone back button in sync with in-app navigation.
@@ -129,9 +159,9 @@ export default function App() {
       if (i < 0 || i >= STATUS_FLOW.length - 1) return;
       const next = STATUS_FLOW[i + 1];
       const patch = { status: next, history: { ...booking.history, [next]: new Date().toISOString() } };
-      if (next === 'completed' && demoParts[booking.categoryId]) patch.parts = [demoParts[booking.categoryId]];
+      if (next === 'completed' && demoParts[booking.categoryId] && !(booking.parts || []).length) patch.parts = [demoParts[booking.categoryId]];
       updateBooking(booking.id, patch);
-      const tech = getProvider(booking.providerId).technician.name;
+      const tech = (booking.tech || getProvider(booking.providerId).technician).name;
       const msgs = {
         assigned: tech + ' is assigned to your job',
         onway: tech + ' is on the way',
@@ -146,7 +176,9 @@ export default function App() {
       nav.tab('bookings');
     },
     pay: (booking, method) => {
-      updateBooking(booking.id, { status: 'paid', payMethod: method, paidAt: new Date().toISOString() });
+      const paidAt = new Date().toISOString();
+      // Keep the technician's parts on the paid booking so the invoice stays complete.
+      updateBooking(booking.id, { status: 'paid', payMethod: method, paidAt, parts: booking.parts || [], history: { ...booking.history, paid: paidAt } });
       nav.replace([{ name: 'home' }, { name: 'review', id: booking.id, justPaid: true }]);
     },
     review: (booking, review) => {
@@ -156,6 +188,8 @@ export default function App() {
     },
     notify: (msg) => setToast(msg),
     reset: () => {
+      const ids = new Set(store.bookings.map((b) => b.id));
+      removeJobs((id) => ids.has(id));
       setStore(initialStore);
       setDraft(null);
       setToast('Demo data cleared');
@@ -163,8 +197,8 @@ export default function App() {
     },
   };
 
-  const booking = current.id ? store.bookings.find((b) => b.id === current.id) : null;
-  const props = { store, nav, draft, setDraft, actions, booking, route: current, install };
+  const booking = current.id ? bookings.find((b) => b.id === current.id) : null;
+  const props = { store: view, nav, draft, setDraft, actions, booking, route: current, install };
 
   let screen;
   switch (current.name) {

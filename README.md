@@ -35,8 +35,16 @@ screens.jsx  all screens (Home, Services, Providers, Schedule, Tracking, Invoice
 data.js      sample categories, services, providers, pricing and bill calculation
 icons.jsx    inline SVG icons
 styles.css   design tokens and styles
+shared.js    link to the provider and technician apps
 public/      app icons, manifest.webmanifest, sw.js (offline)
 ```
+
+## Connected apps
+
+- [Partner (provider) app](https://github.com/utku54321/servizato-provider) - bookings made here appear as incoming requests
+- [Technician app](https://github.com/utku54321/servizato-technician) - the assigned technician's progress, parts and photos show up on the tracking and invoice screens
+
+All three share `shared.js` and talk through browser storage on the same site, so use them on the same phone or browser.
 
 ## Live demo
 

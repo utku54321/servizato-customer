@@ -375,7 +375,7 @@ export function ScheduleScreen({ store, nav, draft, setDraft, actions }) {
 export function TrackingScreen({ nav, booking, actions }) {
   const demoContact = () => actions.notify('Calls and chat open in the live app');
   const provider = getProvider(booking.providerId);
-  const tech = provider.technician;
+  const tech = booking.tech || provider.technician;
   const cat = getCategory(booking.categoryId);
   const idx = STATUS_FLOW.indexOf(booking.status);
   const done = booking.status === 'paid';
@@ -404,7 +404,7 @@ export function TrackingScreen({ nav, booking, actions }) {
           </div>
         )}
 
-        {cancelled && <p className="note danger"><Icon name="info" size={18} />This booking was cancelled.</p>}
+        {cancelled && <p className="note danger"><Icon name="info" size={18} />{booking.declined ? `${provider.name} couldn't take this booking. Please book again with another provider.` : 'This booking was cancelled.'}</p>}
 
         {idx >= 1 && !cancelled && (
           <div className="card row">
@@ -439,9 +439,13 @@ export function TrackingScreen({ nav, booking, actions }) {
           </ol>
         </section>
 
-        {!done && !cancelled && booking.status !== 'completed' && (
+        {!done && !cancelled && booking.status !== 'completed' && booking.live && (
+          <p className="note"><Icon name="refresh" size={18} />Live: {provider.name} and your technician update this booking. It refreshes on its own.</p>
+        )}
+
+        {!done && !cancelled && booking.status !== 'completed' && !booking.live && (
           <div className="demo-box">
-            <p><strong>Demo mode.</strong> In the live app, updates come from the technician. Tap below to simulate the next one.</p>
+            <p><strong>Demo mode.</strong> Open the Servizato Partner app to accept this booking, or tap below to simulate the next update.</p>
             <button type="button" className="btn btn-outline" onClick={() => actions.advance(booking)}>
               <Icon name="refresh" size={18} />Simulate next update
             </button>
@@ -499,14 +503,16 @@ export function InvoiceScreen({ nav, booking, actions }) {
       <TopBar title={'Invoice #INV-' + booking.id.slice(3)} sub={provider.name + ' · ' + formatDate(booking.dateIso)} onBack={nav.back}
         right={<button type="button" className="icon-btn outline" aria-label="Download invoice" onClick={() => window.print()}><Icon name="download" size={20} /></button>} />
       <div className="content">
-        <p className="note good"><Icon name="checkCircle" size={20} />{paid ? 'Paid · ' + METHODS.find((m) => m.id === booking.payMethod)?.label : 'Job completed by ' + provider.technician.name}</p>
+        <p className="note good"><Icon name="checkCircle" size={20} />{paid ? 'Paid · ' + METHODS.find((m) => m.id === booking.payMethod)?.label : 'Job completed by ' + (booking.tech || provider.technician).name}</p>
 
         <section className="stack-sm">
           <h2 className="section-title sm">Proof of work</h2>
           <div className="proof-grid">
-            {['Before', 'After', bill.parts.length ? 'Part replaced' : 'Work area'].map((l) => (
-              <div key={l} className="proof"><Icon name="image" />{l}</div>
-            ))}
+            {booking.photos?.length
+              ? booking.photos.map((p) => <div key={p.label} className="proof"><img src={p.src} alt={p.label + ' photo'} /></div>)
+              : ['Before', 'After', bill.parts.length ? 'Part replaced' : 'Work area'].map((l) => (
+                <div key={l} className="proof"><Icon name="image" />{l}</div>
+              ))}
           </div>
         </section>
 
@@ -556,7 +562,7 @@ export function ReviewScreen({ nav, booking, actions, route }) {
   const [comment, setComment] = useState('');
   const provider = getProvider(booking.providerId);
   const bill = billFor(booking);
-  const tech = provider.technician;
+  const tech = booking.tech || provider.technician;
   const methodLabel = METHODS.find((m) => m.id === booking.payMethod)?.label || '';
 
   return (
@@ -704,7 +710,7 @@ export function AccountScreen({ store, actions, install }) {
           </section>
         )}
         <section className="demo-box">
-          <p><strong>Prototype.</strong> Providers, prices and technicians are sample data. Bookings are saved only on this device.</p>
+          <p><strong>Prototype.</strong> Providers, prices and technicians are sample data. Bookings are saved only on this device, and the Servizato Partner and Technician apps on this device can pick them up.</p>
           <button type="button" className="btn btn-outline" onClick={actions.reset}>Clear demo data</button>
         </section>
       </div>

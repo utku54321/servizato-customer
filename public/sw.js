@@ -1,5 +1,7 @@
-// Offline support: pages load from the network when online and from the cache when offline.
-const CACHE = 'servizato-v1';
+// Offline support (only touches this app's own caches; the other Servizato apps share this site):
+// pages load from the network when online and from the cache when offline.
+const PREFIX = 'servizato-customer-';
+const CACHE = PREFIX + 'v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -10,7 +12,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE && (k.startsWith(PREFIX) || k === 'servizato-v1')).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

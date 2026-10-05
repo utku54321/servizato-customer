@@ -51,7 +51,7 @@ export default function App() {
   // "Install app": Android/desktop Chrome hands us a prompt we can show from a button.
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installed, setInstalled] = useState(
-    () => window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
+    () => !!window.Capacitor?.isNativePlatform?.() || window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
   );
   useEffect(() => {
     const onPrompt = (e) => { e.preventDefault(); setInstallPrompt(e); };
